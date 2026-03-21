@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Environment variables — NEVER commit these
+.env
+.env.local
+.env.production
+*.env
+
+# Build outputs
+dist/
+build/
+*.tgz
+
+# Test coverage
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+junit.xml
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# SonarCloud
+.scannerwork/

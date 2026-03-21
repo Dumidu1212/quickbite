@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-python.python",
+    "charliermarsh.ruff",
+    "ms-azuretools.vscode-docker",
+    "humao.rest-client",
+    "eamodio.gitlens",
+    "SonarSource.sonarlint-vscode",
+    "rangav.vscode-thunder-client",
+    "ms-vscode.azure-account",
+    "ms-azuretools.vscode-azurecontainerapps"
+  ]
+}

@@ -1,0 +1,142 @@
+# docker-compose.yml
+# Run with: docker compose up --build
+# Stop with: docker compose down
+# Logs: docker compose logs -f [service-name]
+#
+# MICROSERVICE PRINCIPLE: Each service is completely isolated.
+# They communicate ONLY through the defined network, never via shared memory or filesystem.
+
+version: "3.9"
+
+# All services share this network so they can reach each other by service name
+# e.g. user-service is reachable at http://user-service:3001 from any other service
+networks:
+  quickbite-network:
+    driver: bridge
+
+services:
+
+  # ── USER SERVICE (Node.js / Express) ────────────────────────────────────
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: quickbite-user
+    ports:
+      - "3001:3001"        # host:container — access at localhost:3001 locally
+    environment:
+      - NODE_ENV=development
+      - USER_SERVICE_PORT=3001
+      - MONGODB_URI_USERS=${MONGODB_URI_USERS}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS}
+    networks:
+      - quickbite-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── MENU SERVICE (Python / FastAPI) ─────────────────────────────────────
+  menu-service:
+    build:
+      context: ./menu-service
+      dockerfile: Dockerfile
+    container_name: quickbite-menu
+    ports:
+      - "8001:8001"
+    environment:
+      - MENU_SERVICE_PORT=8001
+      - MONGODB_URI_MENU=${MONGODB_URI_MENU}
+    networks:
+      - quickbite-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # ── ORDER SERVICE (Node.js / Express) ───────────────────────────────────
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    container_name: quickbite-order
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - ORDER_SERVICE_PORT=3002
+      - MONGODB_URI_ORDERS=${MONGODB_URI_ORDERS}
+      - USER_SERVICE_URL=http://user-service:3001   # resolves via docker network
+      - MENU_SERVICE_URL=http://menu-service:8001
+      - SERVICEBUS_CONN=${SERVICEBUS_CONN}
+      - SERVICEBUS_QUEUE_NAME=${SERVICEBUS_QUEUE_NAME}
+    depends_on:
+      user-service:
+        condition: service_healthy   # waits until user-service healthcheck passes
+      menu-service:
+        condition: service_healthy
+    networks:
+      - quickbite-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # ── NOTIFY SERVICE (Python / FastAPI) ───────────────────────────────────
+  notify-service:
+    build:
+      context: ./notify-service
+      dockerfile: Dockerfile
+    container_name: quickbite-notify
+    ports:
+      - "8002:8002"
+    environment:
+      - NOTIFY_SERVICE_PORT=8002
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - SERVICEBUS_CONN=${SERVICEBUS_CONN}
+      - SERVICEBUS_QUEUE_NAME=${SERVICEBUS_QUEUE_NAME}
+    networks:
+      - quickbite-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  # ── FRONTEND (React / Vite — dev server only) ───────────────────────────
+  # NOTE: In production, the frontend is deployed to Azure Static Web Apps,
+  # NOT as a container. This container is only for local development.
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev          # separate dev Dockerfile using Vite dev server
+    container_name: quickbite-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:3000   # points to local API gateway (or directly to services)
+    volumes:
+      - ./frontend/src:/app/src             # hot reload — changes reflect immediately
+      - ./frontend/public:/app/public
+    depends_on:
+      - user-service
+      - menu-service
+      - order-service
+    networks:
+      - quickbite-network
+    restart: unless-stopped
