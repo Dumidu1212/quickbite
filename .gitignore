@@ -1,44 +1,69 @@
-# Dependencies
+# ── Node.js ──────────────────────────────────────
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Python ───────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
 .venv/
 venv/
+env/
 *.egg-info/
-
-# Environment variables — NEVER commit these
-.env
-.env.local
-.env.production
-*.env
-
-# Build outputs
 dist/
 build/
-*.tgz
+.Python
 
-# Test coverage
+# ── Environment variables ─────────────────────────
+# CRITICAL: never commit real .env files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# ── Test coverage ─────────────────────────────────
 coverage/
 .coverage
 htmlcov/
 .pytest_cache/
 junit.xml
+*.lcov
 
-# IDE
-.vscode/settings.json
+# ── Build outputs ─────────────────────────────────
+dist/
+build/
+*.tgz
+.next/
+
+# ── Docker ────────────────────────────────────────
+# Do NOT ignore Dockerfiles — they must be committed
+
+# ── IDE ───────────────────────────────────────────
 .idea/
 *.swp
+*.swo
+# Keep .vscode/extensions.json and launch.json — ignore only personal settings
+.vscode/settings.json
 
-# Docker
-.dockerignore
-
-# OS
+# ── OS ────────────────────────────────────────────
 .DS_Store
+.DS_Store?
 Thumbs.db
+desktop.ini
 
-# Logs
+# ── Logs ──────────────────────────────────────────
 *.log
 logs/
+npm-debug.log
 
-# SonarCloud
+# ── SonarCloud ────────────────────────────────────
 .scannerwork/
+
+# ── Temporary ─────────────────────────────────────
+*.tmp
+*.temp
+tmp/
+temp/
