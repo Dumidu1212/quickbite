@@ -6,23 +6,25 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "jest --coverage --forceExit",
-    "test:watch": "jest --watch",
-    "lint": "eslint src/ tests/ --ext .js",
-    "lint:fix": "eslint src/ tests/ --ext .js --fix"
+    "test": "npx jest --coverage --forceExit --runInBand",
+    "test:watch": "npx jest --watch",
+    "lint": "npx eslint src/ tests/ --ext .js",
+    "lint:fix": "npx eslint src/ tests/ --ext .js --fix"
   },
   "jest": {
-    "testEnvironment": "node",
-    "coverageDirectory": "coverage",
-    "collectCoverageFrom": [
-      "src/**/*.js",
-      "!src/app.js"
-    ],
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ],
-    "testTimeout": 10000
-  },
+  "testEnvironment": "node",
+  "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+  "coverageDirectory": "coverage",
+  "collectCoverageFrom": [
+    "src/**/*.js",
+    "!src/app.js"
+  ],
+  "testMatch": [
+    "**/tests/**/*.test.js"
+  ],
+  "testTimeout": 30000,
+  "verbose": true
+},
   "engines": {
     "node": ">=20.0.0"
   },
@@ -41,6 +43,7 @@
   "devDependencies": {
     "eslint": "^10.1.0",
     "jest": "^30.3.0",
+    "mongodb-memory-server": "^11.0.1",
     "nodemon": "^3.1.14",
     "prettier": "^3.8.1",
     "supertest": "^7.2.2"

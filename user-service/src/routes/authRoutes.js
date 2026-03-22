@@ -1,53 +1,43 @@
 // src/routes/authRoutes.js
 //
-// Authentication endpoints — register, login, validate token, logout.
-// STUB: Routes are defined with placeholder handlers.
-//       Full implementation happens in Sprint 2.
+// Connects HTTP methods + paths to controller functions.
+// Routes are intentionally thin — no logic here.
+// Validation middleware runs before the controller.
 
 'use strict';
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
+const authController = require('../controllers/authController');
+const { validateRegister, validateLogin } = require('../middleware/validators');
 
 const router = express.Router();
 
-/**
- * POST /auth/register
- * Creates a new user account.
- * Body: { email, password, name }
- */
-router.post('/register', (_req, res) => {
-  // TODO (Sprint 2): implement registration
-  return res.status(501).json({ message: 'Not implemented yet' });
+// Rate limiter for login — prevents brute-force attacks.
+// Max 5 login attempts per IP per 15 minutes.
+// After the 6th attempt the client receives 429 Too Many Requests.
+const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15 minutes
+  max: 5,
+  message: {
+    error: 'TOO_MANY_REQUESTS',
+    message: 'Too many login attempts. Please try again in 15 minutes.',
+  },
+  standardHeaders: true,    // adds RateLimit-* headers to response
+  legacyHeaders: false,
 });
 
-/**
- * POST /auth/login
- * Authenticates a user and returns a JWT.
- * Body: { email, password }
- */
-router.post('/login', (_req, res) => {
-  // TODO (Sprint 2): implement login
-  return res.status(501).json({ message: 'Not implemented yet' });
-});
+// POST /auth/register — validate input then register
+router.post('/register', validateRegister, authController.register);
 
-/**
- * GET /auth/validate
- * Validates a JWT token. Called by other services (e.g. order-service).
- * Header: Authorization: Bearer <token>
- */
-router.get('/validate', (_req, res) => {
-  // TODO (Sprint 2): implement token validation
-  return res.status(501).json({ message: 'Not implemented yet' });
-});
+// POST /auth/login — rate limit then validate then login
+router.post('/login', loginRateLimiter, validateLogin, authController.login);
 
-/**
- * POST /auth/logout
- * Invalidates the current JWT token.
- * Header: Authorization: Bearer <token>
- */
-router.post('/logout', (_req, res) => {
-  // TODO (Sprint 2): implement logout
-  return res.status(501).json({ message: 'Not implemented yet' });
-});
+// GET /auth/validate — called by other services to verify JWTs
+// No authentication middleware here — the endpoint validates the token itself
+router.get('/validate', authController.validateToken);
+
+// POST /auth/logout
+router.post('/logout', authController.logout);
 
 module.exports = router;
