@@ -1,0 +1,39 @@
+openapi: "3.0.3"
+info:
+  title: QuickBite Notify Service
+  version: "1.0.0"
+  description: Email notification service — consumes Azure Service Bus events
+
+servers:
+  - url: http://localhost:8002
+    description: Local development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200": { description: Service healthy }
+
+  /notify/send:
+    post:
+      summary: Send a direct email (admin and testing only)
+      parameters:
+        - in: header
+          name: X-Internal-Key
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to, subject, body]
+              properties:
+                to: { type: string, format: email }
+                subject: { type: string }
+                body: { type: string }
+      responses:
+        "202": { description: Email accepted for delivery }
+        "403": { description: Invalid internal key }
