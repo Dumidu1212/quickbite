@@ -27,7 +27,7 @@ const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   // Check header exists and has correct format
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({
       error: 'UNAUTHORIZED',
       message: 'Authorization header missing or malformed. Expected: Bearer <token>',

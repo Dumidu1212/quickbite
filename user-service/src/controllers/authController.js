@@ -221,7 +221,7 @@ const validateToken = (req, res) => {
     });
   } catch (error) {
     // jwt.verify throws specific error types we can use for better messages
-    const errorCode = error.name === 'TokenExpiredError'
+    const errorCode = error?.name === 'TokenExpiredError'
       ? 'token_expired'
       : 'invalid_token';
 
