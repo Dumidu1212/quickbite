@@ -1,0 +1,48 @@
+{
+  "name": "quickbite-order-service",
+  "version": "1.0.0",
+  "description": "QuickBite order creation and management microservice",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "npx nodemon src/app.js",
+    "test": "npx jest --coverage --forceExit",
+    "test:watch": "npx jest --watch",
+    "lint": "npx eslint src/ tests/ --ext .js",
+    "lint:fix": "npx eslint src/ tests/ --ext .js --fix"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/app.js"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "testTimeout": 10000,
+    "verbose": true
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.13.6",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.3.1",
+    "morgan": "^1.10.1"
+  },
+  "devDependencies": {
+    "eslint": "^10.1.0",
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.8.1",
+    "supertest": "^7.2.2"
+  }
+}
