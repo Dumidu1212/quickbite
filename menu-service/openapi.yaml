@@ -1,0 +1,65 @@
+openapi: "3.0.3"
+info:
+  title: QuickBite Menu Service
+  version: "1.0.0"
+  description: Restaurant catalog and menu item management
+
+servers:
+  - url: http://localhost:8001
+    description: Local development
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200": { description: Service healthy }
+        "503": { description: Database unavailable }
+
+  /restaurants:
+    get:
+      summary: Get all restaurants
+      parameters:
+        - in: query
+          name: cuisine
+          schema: { type: string }
+          description: Filter by cuisine type
+      responses:
+        "200": { description: Array of restaurants }
+
+  /restaurants/{id}:
+    get:
+      summary: Get a single restaurant
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Restaurant object }
+        "404": { description: Not found }
+
+  /restaurants/{id}/menu:
+    get:
+      summary: Get all menu items for a restaurant
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Menu items grouped by category }
+        "404": { description: Restaurant not found }
+
+  /menu/items/{id}:
+    get:
+      summary: Get a single menu item by ID
+      description: Called by order-service to validate items and get current prices
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Menu item with price and availability }
+        "404": { description: Item not found }
