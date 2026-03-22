@@ -15,7 +15,7 @@
 #   - No .env files copied into the image — injected at runtime
 
 # ── Stage 1: Install dependencies ────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:20.19-alpine3.21 AS builder
 
 WORKDIR /app
 
@@ -27,7 +27,7 @@ COPY package*.json ./
 RUN npm ci --include=dev
 
 # ── Stage 2: Production image ─────────────────────────────────────────────────
-FROM node:20-alpine AS production
+FROM node:20.19-alpine3.21 AS production
 
 # Install wget for the HEALTHCHECK command
 RUN apk add --no-cache wget

@@ -10,6 +10,8 @@
 
 'use strict';
 
+require('dotenv').config();
+
 const requiredVars = [
   'MONGODB_URI_USERS',
   'JWT_SECRET',
@@ -31,7 +33,7 @@ if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
 
 const config = {
   // Server
-  port: parseInt(process.env.USER_SERVICE_PORT, 10) || 3001,
+  port: Number.parseInt(process.env.USER_SERVICE_PORT, 10) || 3001,
   nodeEnv: process.env.NODE_ENV || 'development',
   isProduction: process.env.NODE_ENV === 'production',
 
@@ -46,7 +48,7 @@ const config = {
 
   // Bcrypt — number of hashing rounds (higher = more secure but slower)
   // 12 rounds is the recommended balance for production
-  bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 12,
+  bcryptRounds: Number.parseInt(process.env.BCRYPT_ROUNDS, 10) || 12,
 };
 
 module.exports = config;
