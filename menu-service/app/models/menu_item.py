@@ -1,19 +1,22 @@
 # app/models/menu_item.py
 #
-# MenuItem models — same input/output separation pattern as Restaurant.
-# NOTE: price uses float here. In a real financial system we'd use
-# Python's Decimal type. For this prototype float is sufficient.
+# MenuItem models.
+# The GET /menu/items/:id endpoint is the most important one here —
+# it is called by the ORDER SERVICE during order creation to:
+#   1. Verify the item actually exists
+#   2. Get the CURRENT price (we never trust the client-sent price)
+#   3. Check isAvailable before accepting the order
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 
 
 class MenuItemCreate(BaseModel):
-    """Data required to create a new menu item."""
+    """Data required to create a menu item — used in the seed script."""
     restaurantId: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=300)
-    price: float = Field(..., gt=0)    # gt=0 means price must be > 0
+    price: float = Field(..., gt=0)
     category: str = Field(..., min_length=1, max_length=50)
     isAvailable: bool = True
 
@@ -28,5 +31,4 @@ class MenuItem(BaseModel):
     category: str
     isAvailable: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
