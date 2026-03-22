@@ -23,7 +23,9 @@ async def test_get_menu_item_success(seeded_item_id):
     # These fields are required by the order-service integration
     assert body["id"] == seeded_item_id
     assert body["name"] == "Test Item"
-    assert body["price"] == 9.99
+    # S1244 fix: never use == with floating point values
+    # Use pytest.approx or a range check instead
+    assert abs(body["price"] - 9.99) < 0.01
     assert body["isAvailable"] is True
     assert "restaurantId" in body
     assert "category" in body
@@ -53,10 +55,7 @@ async def test_get_menu_item_invalid_id():
 
 @pytest.mark.asyncio
 async def test_get_menu_item_returns_price_for_order_service(seeded_item_id):
-    """
-    Price returned must be a number greater than zero.
-    The order-service uses this to calculate server-side order totals.
-    """
+    """Price returned must be a number greater than zero."""
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
@@ -64,4 +63,5 @@ async def test_get_menu_item_returns_price_for_order_service(seeded_item_id):
 
     price = response.json()["price"]
     assert isinstance(price, (int, float))
+    # S1244 fix: never compare float with == — use > 0 which is safe
     assert price > 0
