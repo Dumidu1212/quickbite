@@ -61,10 +61,10 @@ app.use(express.json({ limit: '10kb' }));
 
 // morgan logs every HTTP request: method, path, status, response time
 // 'combined' format in production (Apache-style), 'dev' format locally
-if (!config.isProduction) {
-  app.use(morgan('dev'));
-} else {
+if (config.isProduction) {
   app.use(morgan('combined'));
+} else {
+  app.use(morgan('dev'));
 }
 
 // ── Routes ─────────────────────────────────────────────────────────────────────

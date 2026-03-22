@@ -1,0 +1,25 @@
+# Dockerfile.dev — Frontend development server
+#
+# SECURITY: Pinned to a specific Node + Alpine version rather than
+# the floating node:20-alpine tag. Pinning prevents unexpected
+# vulnerability introductions when the base image updates silently.
+#
+# This file is used ONLY for local development with docker-compose.
+# Production deploys static files to Azure Static Web Apps — no Docker.
+
+FROM node:20.19-alpine3.21
+
+WORKDIR /app
+
+# Copy package files first for layer caching
+# npm install only re-runs when package.json changes
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 5173
+
+# --host 0.0.0.0 is required inside Docker — Vite defaults to 127.0.0.1
+# which is only reachable from inside the container, not from the host machine
+CMD ["npx", "vite", "--host", "0.0.0.0", "--port", "5173"]
