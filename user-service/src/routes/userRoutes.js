@@ -1,32 +1,21 @@
 // src/routes/userRoutes.js
 //
-// User profile endpoints.
-// STUB: Full implementation in Sprint 2.
+// Profile endpoints — all protected by authenticate middleware.
 
 'use strict';
 
 const express = require('express');
+const { authenticate } = require('../middleware/authMiddleware');
+const { validateProfileUpdate } = require('../middleware/validators');
+const userController = require('../controllers/userController');
 
 const router = express.Router();
 
-/**
- * GET /users/profile
- * Returns the authenticated user's profile.
- * Requires: Authorization: Bearer <token>
- */
-router.get('/profile', (_req, res) => {
-  // TODO (Sprint 2): implement with JWT middleware
-  return res.status(501).json({ message: 'Not implemented yet' });
-});
+// authenticate runs first — rejects requests without valid JWT
+// validateProfileUpdate runs second — checks field formats
+// userController.getProfile/updateProfile runs last
 
-/**
- * PUT /users/profile
- * Updates name and phone number.
- * Requires: Authorization: Bearer <token>
- */
-router.put('/profile', (_req, res) => {
-  // TODO (Sprint 2): implement update
-  return res.status(501).json({ message: 'Not implemented yet' });
-});
+router.get('/profile', authenticate, userController.getProfile);
+router.put('/profile', authenticate, validateProfileUpdate, userController.updateProfile);
 
 module.exports = router;
