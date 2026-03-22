@@ -1,0 +1,11 @@
+node_modules
+coverage
+.env
+.env.*
+*.test.js
+tests/
+.eslintrc.js
+.prettierrc
+README.md
+.git
+.gitignore
