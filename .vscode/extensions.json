@@ -9,7 +9,7 @@
     "eamodio.gitlens",
     "SonarSource.sonarlint-vscode",
     "rangav.vscode-thunder-client",
-    "ms-vscode.azure-account",
+    "redhat.vscode-yaml",
     "ms-azuretools.vscode-azurecontainerapps"
   ]
 }

@@ -1,0 +1,12 @@
+node_modules
+coverage
+.env
+.env.*
+*.test.js
+tests/
+.eslintrc.js
+.prettierrc
+nodemon.json
+README.md
+.git
+.gitignore

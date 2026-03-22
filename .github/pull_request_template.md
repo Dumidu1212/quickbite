@@ -1,8 +1,8 @@
 ## What does this PR do?
 
-<!-- One sentence description of the change -->
+<!-- One sentence describing the change -->
 
-## Related story / ticket
+## Related Sprint / Story
 
 <!-- e.g. Sprint 1 — User service scaffold -->
 
@@ -13,17 +13,15 @@
 - [ ] Infrastructure / DevOps
 - [ ] Documentation
 
-## Checklist before requesting review
-- [ ] My code follows the project's clean code standards
-- [ ] I have written unit tests for new logic
-- [ ] All existing tests still pass (`npm test` / `pytest`)
-- [ ] I have run the linter with no errors (`npm run lint` / `ruff check .`)
-- [ ] I have updated relevant documentation or comments
-- [ ] No secrets, passwords, or API keys are committed
-- [ ] The feature works end-to-end in docker-compose
+## Pre-merge checklist
+- [ ] Unit tests written and passing (`npm test` or `pytest`)
+- [ ] Linter passes with zero errors (`npm run lint` or `ruff check .`)
+- [ ] No secrets, API keys, or passwords committed
+- [ ] `docker compose up --build` starts cleanly
+- [ ] `/health` endpoint returns 200 for any service touched
+- [ ] `.env.example` updated if new env variables added
+- [ ] OpenAPI spec updated if endpoints changed
 
-## How to test this change
+## How to test
 
-<!-- Step-by-step instructions for the reviewer to verify this works -->
-
-## Screenshots (if UI change)
+<!-- Step by step instructions to verify this works -->
