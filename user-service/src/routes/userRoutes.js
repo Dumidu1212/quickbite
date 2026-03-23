@@ -1,21 +1,25 @@
 // src/routes/userRoutes.js
 //
-// Profile endpoints — all protected by authenticate middleware.
+// User profile endpoints — all protected by authenticate middleware.
+// DELETE /users/profile performs a soft delete (sets isActive: false).
 
 'use strict';
 
 const express = require('express');
 const { authenticate } = require('../middleware/authMiddleware');
 const { validateProfileUpdate } = require('../middleware/validators');
-const userController = require('../controllers/userController');
+const { getProfile, updateProfile, deleteAccount } = require('../controllers/userController');
 
 const router = express.Router();
 
-// authenticate runs first — rejects requests without valid JWT
-// validateProfileUpdate runs second — checks field formats
-// userController.getProfile/updateProfile runs last
+// GET /users/profile — returns the authenticated user's profile
+router.get('/profile', authenticate, getProfile);
 
-router.get('/profile', authenticate, userController.getProfile);
-router.put('/profile', authenticate, validateProfileUpdate, userController.updateProfile);
+// PUT /users/profile — updates name and phone only
+router.put('/profile', authenticate, validateProfileUpdate, updateProfile);
+
+// DELETE /users/profile — soft-deletes the account (sets isActive: false)
+// The user must re-authenticate to confirm this is an intentional action
+router.delete('/profile', authenticate, deleteAccount);
 
 module.exports = router;
