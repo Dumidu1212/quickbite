@@ -72,4 +72,47 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { getProfile, updateProfile };
+/**
+ * DELETE /users/profile
+ *
+ * Soft-deletes the authenticated user's account.
+ *
+ * SOFT DELETE vs HARD DELETE:
+ *   We set isActive = false rather than removing the document from MongoDB.
+ *   Hard deletion would leave orphaned order documents in orders-db that
+ *   reference a userId with no corresponding user. Soft delete preserves
+ *   referential integrity across services.
+ *
+ *   A soft-deleted user:
+ *     - Cannot log in (login controller rejects isActive: false accounts)
+ *     - Cannot call any protected endpoint (JWT still technically valid but
+ *       the account is inactive — Sprint 7 will add a blacklist check)
+ *     - Their order history remains intact for audit purposes
+ *
+ * After soft delete the client should call logout() to clear the token.
+ */
+const deleteAccount = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { $set: { isActive: false } },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'NOT_FOUND',
+        message: 'User not found',
+      });
+    }
+
+    return res.status(200).json({
+      message: 'Account deleted successfully',
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+module.exports = { getProfile, updateProfile, deleteAccount };
+
