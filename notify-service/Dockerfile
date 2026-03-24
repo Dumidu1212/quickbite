@@ -1,12 +1,13 @@
-# Dockerfile — Notify Service (Python / FastAPI)
+# notify-service/Dockerfile
+#
+# Single-stage build using Python Alpine — no ncurses vulnerability.
+# Same reasoning as menu-service/Dockerfile.
 
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends wget \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache gcc musl-dev wget
 
-RUN useradd -m -u 1001 appuser
+RUN adduser -D -u 1001 appuser
 
 WORKDIR /app
 
@@ -16,12 +17,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 
 RUN chown -R appuser:appuser /app
+
 USER appuser
 
 EXPOSE 8002
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD wget --quiet --tries=1 --spider http://localhost:8002/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget -qO- http://0.0.0.0:8002/health | grep -q "ok" || exit 1
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
-
