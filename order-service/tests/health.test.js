@@ -65,15 +65,16 @@ describe('GET /health — order-service', () => {
     expect(response.body.error).toBe('NOT_FOUND');
   });
 
-  it('should return 501 for unimplemented POST /orders', async () => {
+
+  it('should return 401 for POST /orders without authentication', async () => {
     const response = await request(app).post('/orders');
 
-    expect(response.status).toBe(501);
+    expect(response.status).toBe(401);
   });
 
-  it('should return 501 for unimplemented GET /orders/:id', async () => {
+  it('should return 401 for GET /orders/:id without authentication', async () => {
     const response = await request(app).get('/orders/some-order-id');
 
-    expect(response.status).toBe(501);
+    expect(response.status).toBe(401);
   });
 });

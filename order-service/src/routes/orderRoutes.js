@@ -1,57 +1,61 @@
 // src/routes/orderRoutes.js
 //
-// Order endpoints — STUB implementation.
-// POST /orders is the most complex endpoint in the whole system.
-// It orchestrates calls to user-service AND menu-service before saving.
-// Full implementation in Sprint 3.
+// Order endpoint routing.
+//
+// ROUTE STRUCTURE:
+//   POST   /orders                 — create order (JWT required)
+//   GET    /orders/user/:userId    — order history (JWT required, own orders only)
+//   GET    /orders/:id             — single order  (JWT required, own orders only)
+//   PUT    /orders/:id/status      — update status (Admin key required)
+//
+// NOTE ON ROUTE ORDER:
+//   GET /orders/user/:userId MUST be registered BEFORE GET /orders/:id.
+//   Express matches routes in registration order.
+//   If /:id is first, the string "user" would be treated as an order ID
+//   and the user history route would never be reached.
 
 'use strict';
 
 const express = require('express');
+const { authenticate }       = require('../middleware/authMiddleware');
+const { requireAdminKey }    = require('../middleware/adminMiddleware');
+const { validateCreateOrder, validateStatusUpdate } = require('../middleware/validators');
+const orderController        = require('../controllers/orderController');
 
 const router = express.Router();
 
-/**
- * POST /orders
- * Creates a new order.
- *
- * Full flow (Sprint 3):
- *   1. Extract JWT from Authorization header
- *   2. Call user-service GET /auth/validate → get userId, email
- *   3. For each item in the order body, call menu-service GET /menu/items/:id
- *   4. Calculate totalPrice server-side from menu-service prices
- *   5. Save order to MongoDB
- *   6. Publish OrderCreated event to Azure Service Bus
- *   7. Return 201 with the saved order
- */
-router.post('/', (_req, res) => {
-  return res.status(501).json({ message: 'Not implemented yet' });
-});
+// POST /orders — create a new order
+// authenticate runs first (validates JWT via User service)
+// validateCreateOrder runs second (validates request body fields)
+// orderController.createOrder runs last (business logic)
+router.post(
+  '/',
+  authenticate,
+  validateCreateOrder,
+  orderController.createOrder
+);
 
-/**
- * GET /orders/:id
- * Returns a single order by MongoDB ID.
- */
-router.get('/:id', (_req, res) => {
-  return res.status(501).json({ message: 'Not implemented yet' });
-});
+// GET /orders/user/:userId — order history
+// MUST be before /:id to prevent "user" matching as an order ID
+router.get(
+  '/user/:userId',
+  authenticate,
+  orderController.getUserOrders
+);
 
-/**
- * GET /orders/user/:userId
- * Returns paginated order history for a user.
- * Requires JWT matching the requested userId.
- */
-router.get('/user/:userId', (_req, res) => {
-  return res.status(501).json({ message: 'Not implemented yet' });
-});
+// GET /orders/:id — single order
+router.get(
+  '/:id',
+  authenticate,
+  orderController.getOrder
+);
 
-/**
- * PUT /orders/:id/status
- * Updates order status (e.g. placed → confirmed → preparing → delivered).
- * Admin-only endpoint — checked via X-Admin-Key header.
- */
-router.put('/:id/status', (_req, res) => {
-  return res.status(501).json({ message: 'Not implemented yet' });
-});
+// PUT /orders/:id/status — admin status update
+router.put(
+  '/:id/status',
+  requireAdminKey,
+  validateStatusUpdate,
+  orderController.updateOrderStatus
+);
 
 module.exports = router;
