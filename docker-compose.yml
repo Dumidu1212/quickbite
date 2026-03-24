@@ -1,166 +1,130 @@
 # docker-compose.yml
 #
-# PURPOSE: Runs all 5 services together for local development.
-# This simulates the production environment on your machine.
+# Local development stack — all 5 services running in containers.
 #
-# USAGE:
-#   Start all:       docker compose up --build
-#   Start detached:  docker compose up --build -d
-#   Stop all:        docker compose down
-#   View logs:       docker compose logs -f
-#   One service:     docker compose logs -f user-service
+# NETWORKING:
+#   All services are on the 'quickbite-network' bridge network.
+#   Inside this network, services reach each other by SERVICE NAME not localhost.
+#   e.g. user-service calls http://menu-service:8001/restaurants
+#        order-service calls http://user-service:3001/auth/validate
 #
-# MICROSERVICE PRINCIPLE:
-#   Each service is completely isolated — separate process, separate database,
-#   separate container. They communicate ONLY over the defined network via HTTP.
-#   No service ever imports code from another service.
+# ENVIRONMENT VARIABLES:
+#   Each service reads from its own .env file via env_file.
+#   Service URLs are OVERRIDDEN here to use container names.
+#   This overrides the localhost URLs in the .env files.
+#
+# HEALTH CHECKS:
+#   Each service has a health check so dependent services wait
+#   for the upstream service to be ready before starting.
+#
+# VOLUMES:
+#   No volumes for source code — we copy code into the image at build time.
+#   This is the production pattern. Use Dockerfile.dev for hot-reload dev.
 
 version: "3.9"
 
-# Shared network — services discover each other by their service name.
-# e.g. from order-service, you reach user-service at http://user-service:3001
-networks:
-  quickbite-network:
-    driver: bridge
-
 services:
-
-  # ════════════════════════════════════════════════════════
-  # USER SERVICE — handles authentication and user profiles
-  # Tech: Node.js + Express + MongoDB
-  # ════════════════════════════════════════════════════════
+  # ── User service ────────────────────────────────────────────────────────────
   user-service:
-    build:
-      context: ./user-service
-      dockerfile: Dockerfile
+    image: quickbite-user:latest
     container_name: quickbite-user
     ports:
       - "3001:3001"
     env_file:
-      - .env
+      - ./user-service/.env
     environment:
-      - USER_SERVICE_PORT=3001
-      - NODE_ENV=development
+      # Override localhost URLs to use container names inside the network
+      NODE_ENV: production
+      USER_SERVICE_PORT: "3001"
     networks:
       - quickbite-network
     healthcheck:
-      # wget is available in alpine images, curl may not be
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+      test: ["CMD", "wget", "-qO-", "http://0.0.0.0:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
 
-  # ════════════════════════════════════════════════════════
-  # MENU SERVICE — restaurant catalog and menu items
-  # Tech: Python + FastAPI + MongoDB
-  # ════════════════════════════════════════════════════════
+  # ── Menu service ────────────────────────────────────────────────────────────
   menu-service:
-    build:
-      context: ./menu-service
-      dockerfile: Dockerfile
+    image: quickbite-menu:latest
     container_name: quickbite-menu
     ports:
       - "8001:8001"
     env_file:
-      - .env
+      - ./menu-service/.env
     environment:
-      - MENU_SERVICE_PORT=8001
+      MENU_SERVICE_PORT: "8001"
     networks:
       - quickbite-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8001/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 25s
+      test: ["CMD", "wget", "-qO-", "http://0.0.0.0:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
 
-  # ════════════════════════════════════════════════════════
-  # ORDER SERVICE — order creation and management
-  # Tech: Node.js + Express + MongoDB
-  # Depends on: user-service (JWT validation), menu-service (item validation)
-  # ════════════════════════════════════════════════════════
+  # ── Order service ────────────────────────────────────────────────────────────
   order-service:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile
+    image: quickbite-order:latest
     container_name: quickbite-order
     ports:
       - "3002:3002"
     env_file:
-      - .env
+      - ./order-service/.env
     environment:
-      - ORDER_SERVICE_PORT=3002
-      - NODE_ENV=development
-      - USER_SERVICE_URL=http://user-service:3001
-      - MENU_SERVICE_URL=http://menu-service:8001
-    networks:
-      - quickbite-network
+      NODE_ENV: production
+      ORDER_SERVICE_PORT: "3002"
+      # Override localhost URLs — inside docker network use container names
+      USER_SERVICE_URL: http://user-service:3001
+      MENU_SERVICE_URL: http://menu-service:8001
     depends_on:
       user-service:
         condition: service_healthy
       menu-service:
         condition: service_healthy
+    networks:
+      - quickbite-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 25s
+      test: ["CMD", "wget", "-qO-", "http://0.0.0.0:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
 
-  # ════════════════════════════════════════════════════════
-  # NOTIFY SERVICE — email notifications via SendGrid
-  # Tech: Python + FastAPI + Azure Service Bus consumer
-  # ════════════════════════════════════════════════════════
+  # ── Notify service ───────────────────────────────────────────────────────────
   notify-service:
-    build:
-      context: ./notify-service
-      dockerfile: Dockerfile
+    image: quickbite-notify:latest
     container_name: quickbite-notify
     ports:
       - "8002:8002"
     env_file:
-      - .env
+      - ./notify-service/.env
     environment:
-      - NOTIFY_SERVICE_PORT=8002
+      NOTIFY_SERVICE_PORT: "8002"
     networks:
       - quickbite-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8002/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      test: ["CMD", "wget", "-qO-", "http://0.0.0.0:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
 
-  # ════════════════════════════════════════════════════════
-  # FRONTEND — React SPA (development server only)
-  # NOTE: In production this is on Azure Static Web Apps,
-  #       NOT a container. This is for local dev only.
-  # ════════════════════════════════════════════════════════
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: quickbite-frontend
-    ports:
-      - "5173:5173"
-    env_file:
-      - .env
-    environment:
-      - VITE_API_BASE_URL=http://localhost:3001
-    volumes:
-      # Hot reload — changes to src/ reflect immediately without rebuilding
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-    depends_on:
-      user-service:
-        condition: service_healthy
-      menu-service:
-        condition: service_healthy
-    networks:
-      - quickbite-network
-    restart: unless-stopped
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+  # NOTE: Frontend runs on the HOST machine via npm run dev (Vite dev server)
+  # during development — not in Docker. This is because:
+  #   1. Vite HMR (hot module replacement) does not work well in containers
+  #   2. The Vite dev proxy handles routing to the correct backend services
+  #   3. The frontend build for production is deployed to Azure Static Web Apps
+  # To build the frontend image for production, use frontend/Dockerfile.
+
+# ── Network ──────────────────────────────────────────────────────────────────
+networks:
+  quickbite-network:
+    driver: bridge
+    name: quickbite-network
