@@ -1,15 +1,4 @@
 # .github/workflows/frontend.yml
-#
-# CI/CD pipeline for the React frontend.
-#
-# STAGES:
-#   1. lint   — ESLint check
-#   2. build  — Vite production build
-#   3. sonar  — SonarCloud analysis
-#
-# NOTE: Azure Static Web Apps deployment is added in Sprint 6
-# when the Azure infrastructure is set up.
-
 name: Frontend CI/CD
 
 on:
@@ -76,7 +65,6 @@ jobs:
       - name: Build production bundle
         run: npm run build
         env:
-          # Empty base URL — in production this is set to the Azure APIM URL
           VITE_API_BASE_URL: ''
 
       - name: Upload build artifact
@@ -98,7 +86,7 @@ jobs:
           fetch-depth: 0
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         with:
           projectBaseDir: frontend
         env:
