@@ -51,9 +51,7 @@ const cartReducer = (state, action) => {
       const existingIndex = state.items.findIndex(
         (item) => item.itemId === action.payload.itemId
       );
-
       if (existingIndex >= 0) {
-        // Item already in cart — increment quantity, keep everything else
         const updated = [...state.items];
         updated[existingIndex] = {
           ...updated[existingIndex],
@@ -61,10 +59,9 @@ const cartReducer = (state, action) => {
         };
         return { ...state, items: updated };
       }
-
-      // New item — append with quantity 1
       return {
-        ...state,
+        // Store restaurantId from the first item added
+        restaurantId: state.restaurantId || action.payload.restaurantId || null,
         items: [...state.items, { ...action.payload, quantity: 1 }],
       };
     }

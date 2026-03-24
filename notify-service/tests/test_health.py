@@ -3,6 +3,7 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
 from app.main import app
+from unittest.mock import patch
 
 
 @pytest.mark.asyncio
@@ -86,21 +87,24 @@ async def test_notify_send_rejects_wrong_key():
 
 @pytest.mark.asyncio
 async def test_notify_send_accepts_correct_key():
-    """POST /notify/send with correct X-Internal-Key must return 202."""
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test"
-    ) as ac:
-        response = await ac.post(
-            "/notify/send",
-            # Use the same key defined in .env
-            headers={"x-internal-key": "test-internal-key-for-local-dev"},
-            json={
-                "to": "customer@example.com",
-                "subject": "Order Confirmed",
-                "body": "Your QuickBite order has been placed.",
-            },
-        )
+    """POST /notify/send with correct X-Internal-Key must return 202 with accepted:True."""
+    # Mock send_generic_email so no real SendGrid call is made during testing.
+    # This test verifies the auth logic and response shape — not SendGrid itself.
+    # SendGrid integration is tested separately in test_notify_consumer.py.
+    with patch("app.routers.notify.send_generic_email", return_value=True):
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test"
+        ) as ac:
+            response = await ac.post(
+                "/notify/send",
+                headers={"x-internal-key": "test-internal-key-for-local-dev"},
+                json={
+                    "to": "customer@example.com",
+                    "subject": "Order Confirmed",
+                    "body": "Your QuickBite order has been placed.",
+                },
+            )
 
     assert response.status_code == 202
     assert response.json()["accepted"] is True
