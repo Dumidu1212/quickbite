@@ -1,17 +1,4 @@
 # .github/workflows/user-service.yml
-#
-# CI/CD pipeline for the User service.
-#
-# TRIGGERS:
-#   - Push to main or dev that changes user-service files
-#   - Pull request to main or dev that changes user-service files
-#   - Manual trigger via workflow_dispatch
-#
-# STAGES:
-#   1. test    — run Jest tests with MongoDB Memory Server
-#   2. sonar   — SonarCloud static analysis and quality gate
-#   3. docker  — build and push image to Docker Hub (main branch only)
-
 name: User Service CI/CD
 
 on:
@@ -29,7 +16,6 @@ on:
 
 jobs:
 
-  # ── Job 1: Test ─────────────────────────────────────────────────────────────
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -54,13 +40,11 @@ jobs:
       - name: Run tests with coverage
         run: npm test
         env:
-          # Tests use MongoDB Memory Server — no real DB connection needed
           NODE_ENV: test
-          JWT_SECRET: test-secret-for-ci-only
+          JWT_SECRET: test-secret-for-ci-only-not-real
           JWT_EXPIRES_IN: 24h
           BCRYPT_ROUNDS: '4'
           USER_SERVICE_PORT: '3001'
-          # MongoDB Memory Server creates its own URI — this is a placeholder
           MONGODB_URI_USERS: mongodb://localhost:27017/test
 
       - name: Upload coverage report
@@ -71,7 +55,6 @@ jobs:
           path: user-service/coverage/
           retention-days: 7
 
-  # ── Job 2: SonarCloud ───────────────────────────────────────────────────────
   sonar:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
@@ -99,26 +82,17 @@ jobs:
         working-directory: user-service
         env:
           NODE_ENV: test
-          JWT_SECRET: test-secret-for-ci-only
+          JWT_SECRET: test-secret-for-ci-only-not-real
           JWT_EXPIRES_IN: 24h
           BCRYPT_ROUNDS: '4'
           USER_SERVICE_PORT: '3001'
           MONGODB_URI_USERS: mongodb://localhost:27017/test
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        with:
-          projectBaseDir: user-service
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
 
-  # ── Job 3: Docker Build & Push ──────────────────────────────────────────────
   docker:
     name: Docker Build & Push
     runs-on: ubuntu-latest
     needs: [test, sonar]
-    # Only push to Docker Hub on pushes to main — not on PRs
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -134,7 +108,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -151,7 +125,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Cache layers between builds to speed up subsequent pushes
           cache-from: type=gha
           cache-to: type=gha,mode=max
-

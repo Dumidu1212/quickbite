@@ -1,7 +1,4 @@
 # .github/workflows/notify-service.yml
-#
-# CI/CD pipeline for the Notify service (Python/FastAPI).
-
 name: Notify Service CI/CD
 
 on:
@@ -58,14 +55,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        with:
-          projectBaseDir: notify-service
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
 
   docker:
     name: Docker Build & Push

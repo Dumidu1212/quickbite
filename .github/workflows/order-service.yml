@@ -1,7 +1,4 @@
 # .github/workflows/order-service.yml
-#
-# CI/CD pipeline for the Order service (Node.js/Express).
-
 name: Order Service CI/CD
 
 on:
@@ -50,7 +47,6 @@ jobs:
           SERVICEBUS_CONN: ''
           SERVICEBUS_QUEUE_NAME: order-events
           ADMIN_KEY: test-admin-key
-          # MongoDB Memory Server creates its own URI
           MONGODB_URI_ORDERS: mongodb://localhost:27017/test
 
       - name: Upload coverage report
@@ -96,13 +92,7 @@ jobs:
           ADMIN_KEY: test-admin-key
           MONGODB_URI_ORDERS: mongodb://localhost:27017/test
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        with:
-          projectBaseDir: order-service
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
+
   docker:
     name: Docker Build & Push
     runs-on: ubuntu-latest

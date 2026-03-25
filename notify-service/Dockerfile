@@ -5,9 +5,8 @@
 
 FROM python:3.11-alpine
 
-RUN apk add --no-cache gcc musl-dev wget
-
-RUN adduser -D -u 1001 appuser
+RUN apk add --no-cache gcc musl-dev wget \
+    && adduser -D -u 1001 appuser
 
 WORKDIR /app
 

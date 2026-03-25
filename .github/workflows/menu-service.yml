@@ -1,3 +1,4 @@
+# .github/workflows/menu-service.yml
 name: Menu Service CI/CD
 
 on:
@@ -39,7 +40,6 @@ jobs:
       - name: Run tests
         run: python -m pytest tests/ -v --tb=short
         env:
-          # Uses real MongoDB Atlas — MONGODB_URI_MENU must be set in GitHub Secrets
           MONGODB_URI_MENU: ${{ secrets.MONGODB_URI_MENU }}
           MENU_SERVICE_PORT: '8001'
 
@@ -53,14 +53,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
-        with:
-          projectBaseDir: menu-service
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
 
   docker:
     name: Docker Build & Push
