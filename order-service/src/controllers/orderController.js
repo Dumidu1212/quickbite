@@ -221,10 +221,21 @@ const updateOrderStatus = async (req, res, next) => {
 
 const getAllOrdersAdmin = async (req, res, next) => {
   try {
-    const page   = Math.max(1, Number.parseInt(req.query.page,  10) || 1);
-    const limit  = Math.min(50, Number.parseInt(req.query.limit, 10) || 50);
-    const skip   = (page - 1) * limit;
-    const filter = req.query.status ? { status: req.query.status } : {};
+    const page  = Math.max(1, Number.parseInt(req.query.page,  10) || 1);
+    const limit = Math.min(50, Number.parseInt(req.query.limit, 10) || 50);
+    const skip  = (page - 1) * limit;
+
+    // S3649 fix: validate status against allowed values before using in query.
+    // Never pass user-controlled data directly to MongoDB — an attacker could
+    // inject a query operator like { $gt: '' } to bypass filters.
+    const ALLOWED_STATUSES = new Set([
+      'placed', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled',
+    ]);
+
+    const requestedStatus = req.query.status;
+    const filter = requestedStatus && ALLOWED_STATUSES.has(requestedStatus)
+      ? { status: requestedStatus }
+      : {};
 
     const [orders, total] = await Promise.all([
       Order.find(filter)
