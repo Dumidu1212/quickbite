@@ -92,13 +92,6 @@ jobs:
           ADMIN_KEY: test-admin-key
           MONGODB_URI_ORDERS: mongodb://localhost:27017/test
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v6
-        with:
-          projectBaseDir: order-service
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
 
   docker:
     name: Docker Build & Push

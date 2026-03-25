@@ -222,16 +222,10 @@ def send_order_confirmation(
         response = sg.send(message)
 
         if 200 <= response.status_code < 300:
-            logger.info(
-                "[SendGrid] Email sent to %s for order %s (status: %d)",
-                to_email, order_id, response.status_code,
-            )
+            logger.info("[SendGrid] Order confirmation email sent for order %s", order_id)
             return True
 
-        logger.error(
-            "[SendGrid] Unexpected status %d sending to %s",
-            response.status_code, to_email,
-        )
+        logger.error("[SendGrid] Failed to send order confirmation email for order %s: %s", order_id, str(e))
         return False
 
     except Exception as e:

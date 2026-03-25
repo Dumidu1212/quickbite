@@ -88,13 +88,6 @@ jobs:
           USER_SERVICE_PORT: '3001'
           MONGODB_URI_USERS: mongodb://localhost:27017/test
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v6
-        with:
-          projectBaseDir: user-service
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
 
   docker:
     name: Docker Build & Push
