@@ -120,7 +120,7 @@ const OrderSummaryCard = ({ order }) => {
       {/* Footer row */}
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
         <span className="text-xs text-gray-400">
-          {order.items?.length} item{order.items?.length !== 1 ? "s" : ""}
+          {order.items?.length} item{order.items?.length === 1 ? '' : 's'}
         </span>
         <span className="text-sm font-bold text-gray-900">
           £{order.totalPrice?.toFixed(2)}
