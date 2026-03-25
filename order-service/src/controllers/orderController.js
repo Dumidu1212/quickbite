@@ -11,10 +11,8 @@
 //
 // JWT VALIDATION:
 //   This controller does NOT re-validate the JWT.
-//   The authenticate middleware (authMiddleware.js) already called the User
-//   service, verified the token, and set req.user = { userId, email }.
-//   Repeating that work here would be redundant and create a double-call.
-//   The controller trusts the middleware — this is the correct layering.
+//   The authenticate middleware already called the User service,
+//   verified the token, and set req.user = { userId, email }.
 //
 // SECURITY — SERVER-SIDE PRICE CALCULATION:
 //   Item prices are fetched from the Menu service, never from the request body.
@@ -23,39 +21,22 @@
 'use strict';
 
 const { validationResult } = require('express-validator');
-const Order               = require('../models/Order');
-const { getMenuItem }     = require('../clients/menuClient');
-const { publishOrderCreated } = require('../messaging/serviceBusPublisher');
+const Order                    = require('../models/Order');
+const { getMenuItem }          = require('../clients/menuClient');
+const { publishOrderCreated }  = require('../messaging/serviceBusPublisher');
 
 // ── Helper functions ────────────────────────────────────────────────────────
 
-/**
- * Formats express-validator errors into a consistent response shape.
- *
- * @param {import('express-validator').Result} errors
- * @returns {Array<{field: string, message: string}>}
- */
 const formatValidationErrors = (errors) =>
   errors.array().map((err) => ({
     field:   err.path,
     message: err.msg,
   }));
 
-/**
- * Validates all items by calling the Menu service in parallel.
- * Returns validated items with authoritative server-side prices.
- * Throws an operational error if any item is not found or unavailable.
- *
- * @param {Array<{itemId: string, quantity: number}>} requestedItems
- * @returns {Promise<Array<{itemId, name, price, quantity}>>}
- */
 const validateAndPriceItems = async (requestedItems) => {
-  // Parallel calls reduce latency vs sequential
-  const results = await Promise.all(
-    requestedItems.map((item) => getMenuItem(item.itemId))
-  );
-
-  const validatedItems = [];
+  const menuItemPromises = requestedItems.map((item) => getMenuItem(item.itemId));
+  const results          = await Promise.all(menuItemPromises);
+  const validatedItems   = [];
 
   for (let i = 0; i < requestedItems.length; i++) {
     const menuItem  = results[i];
@@ -75,7 +56,6 @@ const validateAndPriceItems = async (requestedItems) => {
       throw error;
     }
 
-    // Always use server-side price — ignore any price sent by the client
     validatedItems.push({
       itemId:   menuItem.id,
       name:     menuItem.name,
@@ -87,13 +67,6 @@ const validateAndPriceItems = async (requestedItems) => {
   return validatedItems;
 };
 
-/**
- * Calculates order total from validated items.
- * Rounded to 2 decimal places to avoid floating-point drift.
- *
- * @param {Array<{price: number, quantity: number}>} items
- * @returns {number}
- */
 const calculateTotal = (items) =>
   Math.round(
     items.reduce((sum, item) => sum + item.price * item.quantity, 0) * 100
@@ -101,50 +74,27 @@ const calculateTotal = (items) =>
 
 // ── Controllers ─────────────────────────────────────────────────────────────
 
-/**
- * POST /orders
- *
- * Full order creation flow:
- *   1. Validate request body (express-validator, run before this handler)
- *   2. Read identity from req.user (set by authenticate middleware)
- *   3. Validate and price items via Menu service
- *   4. Calculate total server-side
- *   5. Save to MongoDB
- *   6. Publish OrderCreated to Service Bus (fire-and-forget)
- *   7. Return 201
- */
 const createOrder = async (req, res, next) => {
   try {
-    // Step 1 — check express-validator results
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: formatValidationErrors(errors) });
     }
 
-    // Step 2 — use identity set by authenticate middleware
-    // authenticate already called User service, verified the JWT,
-    // and set req.user = { userId, email }. No need to re-validate here.
     const { userId, email } = req.user;
-
     const { restaurantId, restaurantName, items: requestedItems, deliveryAddress } = req.body;
 
-    // Step 3 — validate items and fetch authoritative prices from Menu service
     let validatedItems;
     try {
       validatedItems = await validateAndPriceItems(requestedItems);
     } catch (itemError) {
       return res.status(itemError.statusCode || 400).json({
-        errors: [{
-          field:   itemError.field || 'items',
-          message: itemError.message,
-        }],
+        errors: [{ field: itemError.field || 'items', message: itemError.message }],
       });
     }
 
-    // Step 4 — calculate total server-side
     const totalPrice = calculateTotal(validatedItems);
 
-    // Step 5 — save to MongoDB
     const order = await Order.create({
       userId,
       restaurantId,
@@ -159,8 +109,6 @@ const createOrder = async (req, res, next) => {
       status: 'placed',
     });
 
-    // Step 6 — publish to Service Bus (fire-and-forget)
-    // Order is already persisted. If publish fails we log but still return 201.
     try {
       await publishOrderCreated({
         orderId:         order.id,
@@ -176,7 +124,6 @@ const createOrder = async (req, res, next) => {
       console.error('[OrderController] Service Bus publish failed:', publishError.message);
     }
 
-    // Step 7 — return created order
     return res.status(201).json({
       message: 'Order placed successfully',
       order:   order.toJSON(),
@@ -186,28 +133,16 @@ const createOrder = async (req, res, next) => {
   }
 };
 
-/**
- * GET /orders/:id
- *
- * Returns a single order. Enforces ownership — users can only read their own orders.
- */
 const getOrder = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id);
 
     if (!order) {
-      return res.status(404).json({
-        error:   'NOT_FOUND',
-        message: 'Order not found',
-      });
+      return res.status(404).json({ error: 'NOT_FOUND', message: 'Order not found' });
     }
 
-    // Return 404 (not 403) so the order's existence is not revealed to other users
     if (order.userId !== req.user.userId) {
-      return res.status(404).json({
-        error:   'NOT_FOUND',
-        message: 'Order not found',
-      });
+      return res.status(404).json({ error: 'NOT_FOUND', message: 'Order not found' });
     }
 
     return res.status(200).json({ order: order.toJSON() });
@@ -216,11 +151,6 @@ const getOrder = async (req, res, next) => {
   }
 };
 
-/**
- * GET /orders/user/:userId
- *
- * Returns paginated order history. Users can only access their own history.
- */
 const getUserOrders = async (req, res, next) => {
   try {
     if (req.params.userId !== req.user.userId) {
@@ -257,12 +187,6 @@ const getUserOrders = async (req, res, next) => {
   }
 };
 
-/**
- * PUT /orders/:id/status
- *
- * Updates order status. Admin-only — protected by X-Admin-Key via adminMiddleware.
- * Cannot update delivered or cancelled orders.
- */
 const updateOrderStatus = async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -273,13 +197,9 @@ const updateOrderStatus = async (req, res, next) => {
     const order = await Order.findById(req.params.id);
 
     if (!order) {
-      return res.status(404).json({
-        error:   'NOT_FOUND',
-        message: 'Order not found',
-      });
+      return res.status(404).json({ error: 'NOT_FOUND', message: 'Order not found' });
     }
 
-    // Prevent updating terminal states
     if (['delivered', 'cancelled'].includes(order.status)) {
       return res.status(409).json({
         error:   'CONFLICT',
@@ -299,9 +219,34 @@ const updateOrderStatus = async (req, res, next) => {
   }
 };
 
+const getAllOrdersAdmin = async (req, res, next) => {
+  try {
+    const page   = Math.max(1, Number.parseInt(req.query.page,  10) || 1);
+    const limit  = Math.min(50, Number.parseInt(req.query.limit, 10) || 50);
+    const skip   = (page - 1) * limit;
+    const filter = req.query.status ? { status: req.query.status } : {};
+
+    const [orders, total] = await Promise.all([
+      Order.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Order.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
+      orders:     orders.map((o) => o.toJSON()),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createOrder,
   getOrder,
   getUserOrders,
   updateOrderStatus,
+  getAllOrdersAdmin,
 };

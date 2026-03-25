@@ -28,6 +28,10 @@ import MenuPage from './pages/MenuPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderPage from './pages/OrderPage';
 import ProfilePage from './pages/ProfilePage';
+import { AdminAuthProvider } from './context/AdminAuthContext';
+import AdminLoginPage from './pages/admin/AdminLoginPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import OrderHistoryPage from './pages/OrderHistoryPage';
 
 const App = () => (
   <BrowserRouter>
@@ -59,6 +63,10 @@ const App = () => (
           <Route path="/orders/:id" element={
             <ProtectedRoute><OrderPage /></ProtectedRoute>
           } />
+
+          <Route path="/orders/user/:userId" element={
+            <ProtectedRoute><OrderHistoryPage /></ProtectedRoute>
+          } />
           <Route path="/profile" element={
             <ProtectedRoute><ProfilePage /></ProtectedRoute>
           } />
@@ -68,6 +76,18 @@ const App = () => (
 
           {/* Catch-all — unknown routes go to login */}
           <Route path="*" element={<Navigate to="/login" replace />} />
+
+          <Route path="/admin/login" element={
+            <AdminAuthProvider>
+              <AdminLoginPage />
+            </AdminAuthProvider>
+          } />
+          <Route path="/admin/dashboard" element={
+            <AdminAuthProvider>
+              <AdminDashboardPage />
+            </AdminAuthProvider>
+          } />
+          <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
         </Routes>
 
       </CartProvider>
