@@ -18,16 +18,16 @@
 //   The logout confirmation uses Modal (which uses showModal() top layer rendering)
 //   so it appears above everything including the sticky navbar and profile avatar.
 
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import PropTypes from 'prop-types';
-import useAuth from '../../hooks/useAuth';
-import useCart from '../../hooks/useCart';
-import Modal from './Modal';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import PropTypes from "prop-types";
+import useAuth from "../../hooks/useAuth";
+import useCart from "../../hooks/useCart";
+import Modal from "./Modal";
 import {
   loadProfileImage,
   generateInitialsAvatar,
-} from '../../utils/profileImage';
+} from "../../utils/profileImage";
 
 // ── Logout modal content ───────────────────────────────────────────────────
 //
@@ -83,7 +83,7 @@ const LogoutModalContent = ({ onConfirm, onCancel }) => (
 
 LogoutModalContent.propTypes = {
   onConfirm: PropTypes.func.isRequired,
-  onCancel:  PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
 };
 
 // ── Cart icon ──────────────────────────────────────────────────────────────
@@ -119,7 +119,13 @@ const CartIcon = ({ totalItems, cartLabel, onCartClick }) => {
         className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
         aria-label={cartLabel}
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" focusable="false">
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          focusable="false"
+        >
           {svgPath}
         </svg>
         {badge}
@@ -134,7 +140,13 @@ const CartIcon = ({ totalItems, cartLabel, onCartClick }) => {
       className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
       aria-label={cartLabel}
     >
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" focusable="false">
+      <svg
+        className="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        focusable="false"
+      >
         {svgPath}
       </svg>
       {badge}
@@ -144,7 +156,7 @@ const CartIcon = ({ totalItems, cartLabel, onCartClick }) => {
 
 CartIcon.propTypes = {
   totalItems: PropTypes.number.isRequired,
-  cartLabel:  PropTypes.string.isRequired,
+  cartLabel: PropTypes.string.isRequired,
   // Optional — when provided, cart icon opens CartDrawer instead of navigating
   onCartClick: PropTypes.func,
 };
@@ -175,20 +187,19 @@ const Navbar = ({ onCartClick }) => {
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
     logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   // User cancelled — close modal, remain logged in
   const handleCancelLogout = () => setShowLogoutModal(false);
 
   // Accessible label for the cart icon — correctly handles singular/plural
-  const cartLabel = `Cart — ${totalItems} item${totalItems === 1 ? '' : 's'}`;
+  const cartLabel = `Cart — ${totalItems} item${totalItems === 1 ? "" : "s"}`;
 
   return (
     <>
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-
           {/* Brand */}
           <Link
             to="/restaurants"
@@ -201,14 +212,22 @@ const Navbar = ({ onCartClick }) => {
           {isAuthenticated && (
             <div className="flex items-center gap-3">
 
-              {/* Cart icon — behaviour controlled by onCartClick prop */}
+              {/* Cart icon */}
               <CartIcon
                 totalItems={totalItems}
                 cartLabel={cartLabel}
                 onCartClick={onCartClick}
               />
 
-              {/* Profile avatar — links to /profile page */}
+              {/* Orders history link */}
+              <Link
+                to={`/orders/user/${user?.id}`}
+                className="text-sm text-gray-600 hover:text-gray-900 transition-colors hidden sm:block"
+              >
+                My orders
+              </Link>
+
+              {/* Profile avatar */}
               <Link
                 to="/profile"
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
@@ -221,13 +240,12 @@ const Navbar = ({ onCartClick }) => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                {/* User name — hidden on small screens to conserve space */}
                 <span className="text-sm text-gray-700 font-medium hidden sm:block">
                   {user?.name}
                 </span>
               </Link>
 
-              {/* Sign out — opens confirmation modal, never logs out immediately */}
+              {/* Sign out */}
               <button
                 type="button"
                 onClick={handleSignOutClick}
