@@ -18,9 +18,9 @@ COPY src/ ./src/
 # ── Stage 2: production ───────────────────────────────────────────────────────
 FROM node:20.19-alpine3.21 AS production
 
-RUN apk add --no-cache wget
-
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN apk add --no-cache wget \
+    && addgroup -S appgroup \
+    && adduser -S appuser -G appgroup
 
 WORKDIR /app
 

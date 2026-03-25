@@ -13,10 +13,8 @@ FROM python:3.11-alpine
 # Install system dependencies.
 # gcc and musl-dev are needed to compile Python packages with C extensions.
 # wget is needed for the Docker health check.
-RUN apk add --no-cache gcc musl-dev wget
-
-# Run as non-root user for security
-RUN adduser -D -u 1001 appuser
+RUN apk add --no-cache gcc musl-dev wget \
+    && adduser -D -u 1001 appuser
 
 WORKDIR /app
 
