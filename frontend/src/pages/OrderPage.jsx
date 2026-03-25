@@ -76,16 +76,16 @@ const StatusStepper = ({ currentStatus }) => {
 
         // S3358 fix: extract nested ternaries into named variables
         const circleClasses = isCompleted
-          ? 'bg-green-500 text-white'
+          ? "bg-green-500 text-white"
           : isCurrent
-            ? 'bg-gray-900 text-white ring-4 ring-gray-200'
-            : 'bg-gray-100 text-gray-400';
+            ? "bg-gray-900 text-white ring-4 ring-gray-200"
+            : "bg-gray-100 text-gray-400";
 
         const labelClasses = isCompleted
-          ? 'text-green-700'
+          ? "text-green-700"
           : isCurrent
-            ? 'text-gray-900'
-            : 'text-gray-400';
+            ? "text-gray-900"
+            : "text-gray-400";
 
         const connectorClasses = isCompleted ? "bg-green-400" : "bg-gray-200";
 
@@ -243,7 +243,7 @@ const OrderPage = () => {
 
       <main className="max-w-xl mx-auto px-4 py-8">
         <div className="mb-4">
-          <BackButton fallback="/restaurants" label="Back to restaurants" />
+          <BackButton fallback="/restaurants" label="Back" />
         </div>
         <div className="flex items-center justify-between mb-6">
           <div>

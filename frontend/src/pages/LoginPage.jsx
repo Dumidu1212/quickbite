@@ -31,7 +31,7 @@
 //   The user is then redirected to /restaurants.
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -281,11 +281,10 @@ RegisterForm.propTypes = {
 // ── Page ───────────────────────────────────────────────────────────────────
 
 const LoginPage = () => {
-  // 'login' or 'register' — controls which form is shown
   const [activeTab, setActiveTab] = useState('login');
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
 
         {/* Brand header */}
@@ -294,14 +293,15 @@ const LoginPage = () => {
           <p className="text-sm text-gray-500 mt-1">Food delivery, made simple</p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+        {/* Customer login card */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-4">
 
           {/* Tab switcher */}
           <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
             {['login', 'register'].map((tab) => (
               <button
                 key={tab}
+                type="button"
                 onClick={() => setActiveTab(tab)}
                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${
                   activeTab === tab
@@ -320,6 +320,61 @@ const LoginPage = () => {
             : <RegisterForm onSwitch={() => setActiveTab('login')} />
           }
         </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400 font-medium">FOR BUSINESS</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
+        {/* Restaurant staff card */}
+        <Link
+          to="/admin/login"
+          className="block bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:border-gray-300 hover:shadow-md transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            {/* Icon */}
+            <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center flex-shrink-0 group-hover:bg-gray-800 transition-colors">
+              <svg
+                className="w-5 h-5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                focusable="false"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900">
+                Restaurant dashboard
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Manage orders and track deliveries
+              </p>
+            </div>
+
+            {/* Arrow */}
+            <svg
+              className="w-4 h-4 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-0.5 transition-all flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              focusable="false"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+
       </div>
     </div>
   );

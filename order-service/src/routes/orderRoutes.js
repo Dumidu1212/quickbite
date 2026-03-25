@@ -43,6 +43,14 @@ router.get(
   orderController.getUserOrders
 );
 
+// GET /orders/admin/all — admin dashboard, all orders
+// MUST be before /:id to prevent "admin" matching as an order ID
+router.get(
+  '/admin/all',
+  requireAdminKey,
+  orderController.getAllOrdersAdmin
+);
+
 // GET /orders/:id — single order
 router.get(
   '/:id',
