@@ -160,16 +160,22 @@ const getUserOrders = async (req, res, next) => {
       });
     }
 
+    // S3649: use the verified identity from req.user (set by authenticate
+    // middleware) rather than the raw URL parameter. Both are the same value
+    // at this point (ownership check above), but req.user.userId comes from
+    // a verified JWT — not directly from user-controlled input.
+    const { userId } = req.user;
+
     const page  = Math.max(1, Number.parseInt(req.query.page,  10) || 1);
     const limit = Math.min(20, Number.parseInt(req.query.limit, 10) || 10);
     const skip  = (page - 1) * limit;
 
     const [orders, total] = await Promise.all([
-      Order.find({ userId: req.params.userId })
+      Order.find({ userId })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Order.countDocuments({ userId: req.params.userId }),
+      Order.countDocuments({ userId }),
     ]);
 
     return res.status(200).json({
@@ -225,14 +231,31 @@ const getAllOrdersAdmin = async (req, res, next) => {
     const limit = Math.min(50, Number.parseInt(req.query.limit, 10) || 50);
     const skip  = (page - 1) * limit;
 
-    // Whitelist allowed status values — never pass user input directly to MongoDB
-    const ALLOWED_STATUSES = new Set([
-      'placed', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled',
-    ]);
-    const requestedStatus = req.query.status;
-    const filter = requestedStatus && ALLOWED_STATUSES.has(requestedStatus)
-      ? { status: requestedStatus }
-      : {};
+    // S3649 fix: use predefined filter objects instead of constructing queries
+    // from user input. Each filter object is a hardcoded literal — the user
+    // input only selects which predefined object to use, never contributes
+    // any value to the query itself.
+    const STATUS_FILTERS = Object.freeze({
+      placed:    { status: 'placed' },
+      confirmed: { status: 'confirmed' },
+      preparing: { status: 'preparing' },
+      ready:     { status: 'ready' },
+      delivered: { status: 'delivered' },
+      cancelled: { status: 'cancelled' },
+    });
+
+    const requestedStatus = typeof req.query.status === 'string'
+      ? req.query.status
+      : '';
+
+    if (requestedStatus && !Object.prototype.hasOwnProperty.call(STATUS_FILTERS, requestedStatus)) {
+      return res.status(400).json({
+        error:   'BAD_REQUEST',
+        message: 'Invalid status filter',
+      });
+    }
+
+    const filter = requestedStatus ? STATUS_FILTERS[requestedStatus] : {};
 
     const [orders, total] = await Promise.all([
       Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
@@ -241,7 +264,12 @@ const getAllOrdersAdmin = async (req, res, next) => {
 
     return res.status(200).json({
       orders:     orders.map((o) => o.toJSON()),
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     return next(error);
