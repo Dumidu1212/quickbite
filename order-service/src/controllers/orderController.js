@@ -225,23 +225,17 @@ const getAllOrdersAdmin = async (req, res, next) => {
     const limit = Math.min(50, Number.parseInt(req.query.limit, 10) || 50);
     const skip  = (page - 1) * limit;
 
-    // S3649 fix: validate status against allowed values before using in query.
-    // Never pass user-controlled data directly to MongoDB — an attacker could
-    // inject a query operator like { $gt: '' } to bypass filters.
+    // Whitelist allowed status values — never pass user input directly to MongoDB
     const ALLOWED_STATUSES = new Set([
       'placed', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled',
     ]);
-
     const requestedStatus = req.query.status;
     const filter = requestedStatus && ALLOWED_STATUSES.has(requestedStatus)
       ? { status: requestedStatus }
       : {};
 
     const [orders, total] = await Promise.all([
-      Order.find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
+      Order.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
       Order.countDocuments(filter),
     ]);
 

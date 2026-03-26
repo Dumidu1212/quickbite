@@ -56,7 +56,7 @@ const validMenuItem = {
   id:           VALID_ITEM_ID,
   restaurantId: 'rest-abc-123',
   name:         'Margherita Pizza',
-  price:        14.00,
+  price:        14,
   isAvailable:  true,
 };
 
@@ -159,7 +159,7 @@ describe('POST /orders', () => {
 
     expect(res.status).toBe(201);
     // Must use menu-service price (14.00 × 1 = 14.00), not client price (0.01)
-    expect(res.body.order.totalPrice).toBe(14.00);
+    expect(res.body.order.totalPrice).toBe(14);
   });
 
   it('should return 401 when authenticate middleware rejects the request', async () => {
@@ -212,7 +212,8 @@ describe('POST /orders', () => {
   });
 
   it('should return 400 when delivery address is missing', async () => {
-    const { deliveryAddress: _omit, ...bodyWithoutAddress } = validOrderBody;
+    const bodyWithoutAddress = { ...validOrderBody };
+    delete bodyWithoutAddress.deliveryAddress;
 
     const res = await request(app)
       .post('/orders')

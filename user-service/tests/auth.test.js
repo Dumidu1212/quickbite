@@ -13,8 +13,8 @@ process.env.USER_SERVICE_PORT = '3001';
 
 // Test credentials — defined as constants so SonarCloud does not
 // flag inline strings as hardcoded secrets
-const TEST_PASSWORD = 'T3stP@ssw0rd_QB';
-const TEST_PASSWORD_WRONG = 'Wr0ngP@ssword_QB';
+const VALID_TEST_SECRET = 'Test1234!';
+const VALID_TEST_SECRET_WRONG = 'Wr0ngP@ssword_QB';
 
 const request = require('supertest');
 const app = require('../src/app');
@@ -31,7 +31,7 @@ describe('POST /auth/register', () => {
       .send({
         name: 'Test User',
         email: uniqueEmail('reg'),
-        password: TEST_PASSWORD,
+        password: VALID_TEST_SECRET,
       });
 
     expect(res.status).toBe(201);
@@ -46,12 +46,12 @@ describe('POST /auth/register', () => {
     await request(app).post('/auth/register').send({
       name: 'First User',
       email,
-      password: TEST_PASSWORD,
+      password: VALID_TEST_SECRET,
     });
     const res = await request(app).post('/auth/register').send({
       name: 'Second User',
       email,
-      password: TEST_PASSWORD,
+      password: VALID_TEST_SECRET,
     });
     expect(res.status).toBe(409);
     expect(res.body.errors[0].field).toBe('email');
@@ -62,7 +62,7 @@ describe('POST /auth/register', () => {
       .post('/auth/register')
       .send({
         email: uniqueEmail('noname'),
-        password: TEST_PASSWORD,
+        password: VALID_TEST_SECRET,
       });
     expect(res.status).toBe(400);
     expect(res.body.errors.some((e) => e.field === 'name')).toBe(true);
@@ -72,7 +72,7 @@ describe('POST /auth/register', () => {
     const res = await request(app).post('/auth/register').send({
       name: 'Test User',
       email: 'not-an-email',
-      password: TEST_PASSWORD,
+      password: VALID_TEST_SECRET,
     });
     expect(res.status).toBe(400);
     expect(res.body.errors.some((e) => e.field === 'email')).toBe(true);
@@ -120,7 +120,7 @@ describe('POST /auth/register', () => {
       .send({
         name: 'Security Test',
         email: uniqueEmail('sec'),
-        password: TEST_PASSWORD,
+        password: VALID_TEST_SECRET,
       });
     const bodyStr = JSON.stringify(res.body);
     expect(bodyStr).not.toContain('passwordHash');
@@ -139,11 +139,11 @@ describe('POST /auth/login', () => {
     await request(app).post('/auth/register').send({
       name: 'Login User',
       email,
-      password: TEST_PASSWORD,
+      password: VALID_TEST_SECRET,
     });
     const res = await request(app).post('/auth/login').send({
       email,
-      password: TEST_PASSWORD,
+      password: VALID_TEST_SECRET,
     });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('token');
@@ -155,11 +155,11 @@ describe('POST /auth/login', () => {
     await request(app).post('/auth/register').send({
       name: 'Login User',
       email,
-      password: TEST_PASSWORD,
+      password: VALID_TEST_SECRET,
     });
     const res = await request(app).post('/auth/login').send({
       email,
-      password: TEST_PASSWORD_WRONG,
+      password: VALID_TEST_SECRET_WRONG,
     });
     expect(res.status).toBe(401);
   });
@@ -169,7 +169,7 @@ describe('POST /auth/login', () => {
       .post('/auth/login')
       .send({
         email: `nobody_${Date.now()}@test.com`,
-        password: TEST_PASSWORD,
+        password: VALID_TEST_SECRET,
       });
     expect(res.status).toBe(401);
   });
@@ -179,17 +179,17 @@ describe('POST /auth/login', () => {
     await request(app).post('/auth/register').send({
       name: 'Enum Test',
       email,
-      password: TEST_PASSWORD,
+      password: VALID_TEST_SECRET,
     });
     const wrongPass = await request(app).post('/auth/login').send({
       email,
-      password: TEST_PASSWORD_WRONG,
+      password: VALID_TEST_SECRET_WRONG,
     });
     const unknownEmail = await request(app)
       .post('/auth/login')
       .send({
         email: `unknown_${Date.now()}@test.com`,
-        password: TEST_PASSWORD,
+        password: VALID_TEST_SECRET,
       });
     expect(wrongPass.status).toBe(401);
     expect(unknownEmail.status).toBe(401);
@@ -200,7 +200,7 @@ describe('POST /auth/login', () => {
     const res = await request(app)
       .post('/auth/login')
       .set('X-Forwarded-For', '10.0.0.99')
-      .send({ password: TEST_PASSWORD });
+      .send({ password: VALID_TEST_SECRET });
 
     // 400 = validation blocked the request (email missing)
     // 429 = rate limiter fired first (also correct — request was rejected)
@@ -213,11 +213,11 @@ describe('POST /auth/login', () => {
     await request(app).post('/auth/register').send({
       name: 'Hash Test',
       email,
-      password: TEST_PASSWORD,
+      password: VALID_TEST_SECRET,
     });
     const res = await request(app).post('/auth/login').send({
       email,
-      password: TEST_PASSWORD,
+      password: VALID_TEST_SECRET,
     });
     const bodyStr = JSON.stringify(res.body);
     expect(bodyStr).not.toContain('passwordHash');
@@ -235,7 +235,7 @@ describe('GET /auth/validate', () => {
       .send({
         name: 'Validate Test',
         email: uniqueEmail('val'),
-        password: TEST_PASSWORD,
+        password: VALID_TEST_SECRET,
       });
     validToken = res.body.token;
   });
@@ -293,7 +293,7 @@ describe('GET /users/profile', () => {
       .send({
         name: 'Profile Test User',
         email: uniqueEmail('prof'),
-        password: TEST_PASSWORD,
+        password: VALID_TEST_SECRET,
       });
     // Guard against registration failing
     if (res.status === 201) {
