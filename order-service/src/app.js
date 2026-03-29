@@ -25,7 +25,7 @@ app.use(helmet());
 app.use(cors({
   origin: config.isProduction ? process.env.ALLOWED_ORIGIN : '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key'],
 }));
 
 // Request parsing
