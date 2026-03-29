@@ -86,7 +86,7 @@ const clearSession = () => {
 const createCustomerClient = (baseURL) => {
   const client = axios.create({
     baseURL,
-    timeout: 10000,
+    timeout: 30000,  // was 10000
     headers: { 'Content-Type': 'application/json' },
   });
 

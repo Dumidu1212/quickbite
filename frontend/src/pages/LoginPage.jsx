@@ -31,7 +31,7 @@
 //   The user is then redirected to /restaurants.
 
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -113,6 +113,7 @@ Field.propTypes = {
 const LoginForm = ({ onSwitch }) => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     register,
@@ -120,12 +121,14 @@ const LoginForm = ({ onSwitch }) => {
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(loginSchema) });
 
-  const onSubmit = async (data) => {
-    try {
-      await login(data.email, data.password);
-      toast.success('Welcome back!');
-      navigate('/restaurants');
-    } catch (err) {
+ const onSubmit = async (data) => {
+  try {
+    await login(data.email, data.password);
+    toast.success('Welcome back!');
+    // Return to checkout if that's where they came from
+    const returnTo = location.state?.returnTo || '/restaurants';
+    navigate(returnTo);
+  } catch (err) {
       // Network error — User service not running
       if (!err.response) {
         toast.error('Cannot connect. Make sure the User service is running.');
