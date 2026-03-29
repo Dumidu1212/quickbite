@@ -23,7 +23,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import AdminAuthContext from './adminAuth-context';
-import { updateOrderStatus } from '../api/admin.api';
+import { getAllOrders } from '../api/admin.api';
 
 // sessionStorage key for persisting the admin key across refreshes
 const ADMIN_KEY_STORAGE = 'quickbite_admin_key';
@@ -57,25 +57,18 @@ export const AdminAuthProvider = ({ children }) => {
   // This confirms the key is valid without requiring a dedicated verify endpoint.
   const login = useCallback(async (key) => {
     try {
-      await updateOrderStatus(key, '000000000000000000000000', 'confirmed');
+      // Verify the key by calling GET /orders/admin/all
+      // 200 = key valid, 403 = key invalid
+      await getAllOrders(key);
+      setAdminKey(key);
+      saveAdminKeyToSession(key);
+      return { success: true };
     } catch (err) {
-      // 404 means the key was accepted but the order does not exist — key is valid
-      if (err.response?.status === 404) {
-        setAdminKey(key);
-        saveAdminKeyToSession(key);
-        return { success: true };
-      }
-      // 403 means the key was rejected
       if (err.response?.status === 403) {
         return { success: false, message: 'Invalid admin key. Please try again.' };
       }
-      // Network error — Order service not reachable
       return { success: false, message: 'Cannot connect to Order service.' };
     }
-    // If the update somehow succeeded (very unlikely with a fake ID), key is valid
-    setAdminKey(key);
-    saveAdminKeyToSession(key);
-    return { success: true };
   }, []);
 
   const logout = useCallback(() => {
