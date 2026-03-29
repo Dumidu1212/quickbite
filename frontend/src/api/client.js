@@ -1,70 +1,78 @@
 // src/api/client.js
 //
-// Single Axios instance for the entire frontend.
+// Axios client configuration for the QuickBite frontend.
+//
+// DEV vs PRODUCTION:
+//   Development — Vite proxy routes all relative paths to the correct service.
+//     /auth/* and /users/*   → localhost:3001 (User service)
+//     /restaurants/*         → localhost:8001 (Menu service)
+//     /orders/*              → localhost:3002 (Order service)
+//
+//   Production — Each service has its own Azure Container Apps URL.
+//     Three separate Axios clients are exported, one per service.
 //
 // TOKEN LIFECYCLE:
-//   The JWT is stored in _token (module variable) after login.
-//   It is LOST on page refresh — this is intentional for XSS protection.
-//   The user object is restored from sessionStorage after refresh, so the
-//   UI shows the user as logged in, but _token is null.
-//
-//   Pages that make authenticated API calls should check hasToken() first.
-//   If the token is missing, redirect to login with a clear message rather
-//   than letting the API call fail with 401 and triggering a silent redirect.
-//
-// 401 HANDLING:
-//   The response interceptor redirects to login on 401 for most routes.
-//   Auth endpoints (/auth/login, /auth/register) are excluded because
-//   401 there means "wrong credentials" — an expected response.
+//   JWT stored in _token (module variable) — intentionally cleared on refresh.
+//   User object persisted in sessionStorage so UI stays logged in after refresh.
 
 import axios from 'axios';
 
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '',
-  timeout: 10000,
-  headers: { 'Content-Type': 'application/json' },
-});
+const IS_PROD = import.meta.env.PROD;
 
-// In-memory token — persists for the JS session, cleared on page refresh
+const USER_BASE  = IS_PROD ? (import.meta.env.VITE_USER_SERVICE_URL  || '') : '';
+const MENU_BASE  = IS_PROD ? (import.meta.env.VITE_MENU_SERVICE_URL  || '') : '';
+const ORDER_BASE = IS_PROD ? (import.meta.env.VITE_ORDER_SERVICE_URL || '') : '';
+
+// ── In-memory token ────────────────────────────────────────────────────────
+
 let _token = null;
 
-export const setToken  = (token) => { _token = token; };
-export const getToken  = () => _token;
+export const setToken   = (token) => { _token = token; };
+export const getToken   = ()      => _token;
+export const clearToken = ()      => { _token = null; };
+export const hasToken   = ()      => Boolean(_token);
 
-// hasToken() lets components check before making protected calls.
-// Use this to give users a friendly "session expired" message instead
-// of silently redirecting them mid-flow (e.g. during checkout).
-export const hasToken  = () => Boolean(_token);
+// ── Client factory ─────────────────────────────────────────────────────────
 
-// Request interceptor — attach JWT to every outgoing request
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+const createClient = (baseURL) => {
+  const client = axios.create({
+    baseURL,
+    timeout: 10000,
+    headers: { 'Content-Type': 'application/json' },
+  });
 
-// Response interceptor — handle expired/invalid sessions globally
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      const url = error.config?.url || '';
-      const isAuthEndpoint =
-        url.includes('/auth/login') ||
-        url.includes('/auth/register');
+  client.interceptors.request.use(
+    (config) => {
+      if (_token) config.headers.Authorization = `Bearer ${_token}`;
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
 
-      if (!isAuthEndpoint) {
-        setToken(null);
-        globalThis.location.href = '/login';
+  client.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        const url = error.config?.url || '';
+        const isAuthEndpoint =
+          url.includes('/auth/login') ||
+          url.includes('/auth/register');
+        if (!isAuthEndpoint) {
+          clearToken();
+          globalThis.location.href = '/login';
+        }
       }
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
-  }
-);
+  );
 
-export default apiClient;
+  return client;
+};
+
+// ── One client per microservice ────────────────────────────────────────────
+
+export const userClient  = createClient(USER_BASE);
+export const menuClient  = createClient(MENU_BASE);
+export const orderClient = createClient(ORDER_BASE);
+
+export default orderClient;
