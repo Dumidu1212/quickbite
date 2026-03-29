@@ -265,7 +265,7 @@ def send_generic_email(to: str, subject: str, body: str) -> bool:
 
     try:
         message = Mail(
-            from_email=("noreply@quickbite.com", "QuickBite"),
+            from_email=("it22311436@my.sliit.lk", "QuickBite"),
             to_emails=to,
             subject=subject,
             plain_text_content=body,

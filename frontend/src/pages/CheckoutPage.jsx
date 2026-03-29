@@ -93,8 +93,8 @@ const CheckoutPage = () => {
     // The token is lost on page refresh — detect this early and give
     // the user a clear message instead of a silent 401 redirect.
     if (!hasToken()) {
-      toast.error('Your session expired. Please sign in to place your order.');
-      navigate('/login');
+      toast.error('Your session expired. Please sign in again to place your order.');
+      navigate('/login', { state: { returnTo: '/checkout' } });
       return;
     }
 
