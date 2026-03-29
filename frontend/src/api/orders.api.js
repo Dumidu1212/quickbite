@@ -9,7 +9,7 @@
 //   We never trust or send prices from the frontend — this prevents
 //   price manipulation where a client sends price: 0.01 for a £14 item.
 
-import apiClient from './client';
+import { orderClient as apiClient } from './client';
 
 /**
  * Places a new order.

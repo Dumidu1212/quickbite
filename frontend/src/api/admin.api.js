@@ -14,7 +14,7 @@
 //   The admin dashboard has different auth (X-Admin-Key header)
 //   from the customer-facing app (JWT Bearer token).
 
-import apiClient from './client';
+import { orderClient as apiClient } from './client';
 
 /**
  * Fetches all orders, optionally filtered by status.

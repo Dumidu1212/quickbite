@@ -10,7 +10,7 @@
 //   either update .env or use a Vite proxy. Sprint 4 resolves this
 //   by running everything through docker-compose.
 
-import apiClient from './client';
+import { menuClient as apiClient } from './client';
 
 /**
  * Returns all restaurants. Optionally filter by cuisine type.

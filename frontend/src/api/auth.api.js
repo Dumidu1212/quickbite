@@ -5,7 +5,7 @@
 // Components call these functions — they never call apiClient directly.
 // This means if the User service API changes, only this file needs updating.
 
-import apiClient from './client';
+import { userClient as apiClient } from './client';
 
 /**
  * Logs in an existing user.
