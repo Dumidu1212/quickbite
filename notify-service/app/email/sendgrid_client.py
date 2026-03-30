@@ -209,7 +209,7 @@ def send_order_confirmation(
         )
 
         message = Mail(
-            from_email=("noreply@quickbite.com", "QuickBite"),
+            from_email=("it22311436@my.sliit.lk", "QuickBite"),
             to_emails=to_email,
             subject=f"Order confirmed — QuickBite #{order_id[-8:].upper()}",
         )

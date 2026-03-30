@@ -143,24 +143,29 @@ async def start_consumer() -> None:
             settings.servicebus_conn,
             logging_enable=False,
         ) as client:
-            async with client.get_queue_receiver(
-                queue_name=settings.servicebus_queue_name,
-                max_wait_time=5,
-            ) as receiver:
-                logger.info("[ServiceBus] Consumer ready — listening for OrderCreated events")
+            logger.info("[ServiceBus] Consumer ready — listening for OrderCreated events")
 
-                async for message in receiver:
-                    try:
-                        await handle_message(message, receiver)
-                    except Exception as e:
-                        logger.error(
-                            "[ServiceBus] Unexpected error handling message: %s", str(e),
-                            exc_info=True,
-                        )
+            # Keep reconnecting — max_wait_time=5 causes the async iterator
+            # to complete after 5s of silence. The while loop restarts it.
+            while True:
+                async with client.get_queue_receiver(
+                    queue_name=settings.servicebus_queue_name,
+                    max_wait_time=5,
+                ) as receiver:
+                    async for message in receiver:
                         try:
-                            await receiver.abandon_message(message)
-                        except Exception:
-                            pass
+                            await handle_message(message, receiver)
+                        except Exception as e:
+                            logger.error(
+                                "[ServiceBus] Unexpected error handling message: %s", str(e),
+                                exc_info=True,
+                            )
+                            try:
+                                await receiver.abandon_message(message)
+                            except Exception:
+                                pass
+                # Brief pause before re-opening receiver
+                await asyncio.sleep(1)
 
     except asyncio.CancelledError:
         logger.info("[ServiceBus] Consumer task cancelled — shutting down cleanly")
