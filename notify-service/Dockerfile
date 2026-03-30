@@ -1,11 +1,8 @@
 # notify-service/Dockerfile
-#
-# Single-stage build using Python Alpine — no ncurses vulnerability.
-# Same reasoning as menu-service/Dockerfile.
-
 FROM python:3.11-alpine
 
-RUN apk add --no-cache gcc musl-dev wget \
+# Add CA certificates for Azure Service Bus TLS connections
+RUN apk add --no-cache gcc musl-dev wget ca-certificates \
     && adduser -D -u 1001 appuser
 
 WORKDIR /app
