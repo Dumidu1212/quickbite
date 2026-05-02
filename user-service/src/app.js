@@ -24,7 +24,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
-const config = require('./config/env');         // validates env vars, crashes if missing
+const config = require('./config/env'); // validates env vars, crashes if missing
 const { connectDB } = require('./config/database');
 const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -45,11 +45,13 @@ app.use(helmet());
 // CORS — specifies which origins can call this API.
 // In development we allow all origins. In production, this will be
 // restricted to the Azure API Management URL only.
-app.use(cors({
-  origin: config.isProduction ? process.env.ALLOWED_ORIGIN : '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  cors({
+    origin: config.isProduction ? process.env.ALLOWED_ORIGIN : '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 // ── Request parsing middleware ─────────────────────────────────────────────────
 
@@ -71,6 +73,8 @@ if (config.isProduction) {
 
 // Health check — must be accessible without authentication
 app.use('/health', healthRoutes);
+
+// add comment for the cicd pipeline check
 
 // Auth routes — /auth/register, /auth/login, /auth/validate, /auth/logout
 app.use('/auth', authRoutes);
@@ -104,9 +108,7 @@ app.use((err, _req, res, _next) => {
   const statusCode = err.statusCode || 500;
   return res.status(statusCode).json({
     error: err.code || 'INTERNAL_ERROR',
-    message: config.isProduction
-      ? 'An unexpected error occurred'
-      : err.message,
+    message: config.isProduction ? 'An unexpected error occurred' : err.message,
   });
 });
 
